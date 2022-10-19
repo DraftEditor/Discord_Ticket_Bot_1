@@ -12,6 +12,12 @@ const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
 client.once("ready", async () => {
+  client.user.setPresence({
+    activity: {
+      name: client.channels.cache.size + "作成者　By　さとみ＃6121"
+    },
+    status: "online"
+  });
   const ticket = {
     name: "ticket",
     description: "チケットの作成パネル表示します。",

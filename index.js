@@ -3,80 +3,32 @@ const {
   Intents,
   MessageActionRow,
   MessageButton,
-  MessageEmbed,
-  ClientApplication,
 } = require('discord.js');
-const http = require('http');
-
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
 });
-client.once("ready", async () => {
-  client.user.setPresence({
-    activity: {
-      name: client.channels.cache.size + "作成者　By　さとみ＃6121"
-    },
-    status: "online"
-  });
-  const ticket = {
-    name: "ticket",
-    description: "チケットの作成パネル表示します。",
-    options: [
-      {
-        type: "STRING",
-        name: "タイトル",
-        description: "チケットパネルのタイトル",
-        required: true,
-      },
-      {
-        type: "STRING",
-        name: "説明",
-        description: "チケットパネルの詳細説明",
-        required: false,
-      },
-      {
-        type: "STRING",
-        name: "画像",
-        description: "チケットパネル送付する画像",
-        required: false,
-      },
-      {
-        type: "STRING",
-        name: "ロール",
-        description: "ロールを選択してください。",
-        required: false,
-      },
-
-    ]
-  };
-  const commands = [ticket];
-  await client.application.commands.set(commands);
-  console.log("Ready!");
-});
-client.on("interactionCreate", async (interaction) => {
+client.on('messageCreate', async message => {
   //メッセージイベント発火
-  if (!interaction.isCommand()) {
-    return;
-  }
-  if (interaction.commandName === 'ticket') {
+  if (message.content.startsWith("!ti")) {
     //!tiが打たれたら
-    if (!interaction.member.permissions.has("ADMINISTRATOR")) return interaction.channel.send('NOADOMIN');
+    if (!message.member.permissions.has("ADMINISTRATOR")) return message.channel.send('NOADOMIN');
+    //権限確認
+    const args = message.content.split(" ").slice(1);
+    //argsに空白で区切って配列にして1番目の文字を代入する
+    if (!args[0]) return message.reply("コンテンツがないよ");
     //何も代入されていなかったら
-    const tic1 = new MessageButton().setCustomId("ticket").setStyle("SUCCESS").setLabel("🎫 チケット発行");
-    const createticketemb = new MessageEmbed()
-      .setColor("#00FBFF")
-      .setTitle(String(interaction.options.get("タイトル")))
-      .setDescription("```下記ボタンを押してチケットを作成してください！```")
-      .setTimestamp()
+    const tic1 = new MessageButton().setCustomId("ticket").setStyle("PRIMARY").setLabel("チケット");
     //button作る
-    await interaction.channel.send({
-      embeds: [createticketemb],
+    await message.channel.send({
+      embeds: [{
+        description: String(args.join(" "))
+      }],
       components: [new MessageActionRow().addComponents(tic1)]
     });
     //embedとbutton送信
-    if (interaction.guild.channels.cache.find(name => name.name === "ticket")) return;
+    if (message.guild.channels.cache.find(name => name.name === "ticket")) return;
     //ticketというカテゴリーがあったらreturn
-    interaction.guild.channels.create('ticket', {
+    message.guild.channels.create('ticket', {
       type: 'GUILD_CATEGORY'
     });
     //ticketというカテゴリーを作る
@@ -85,7 +37,7 @@ client.on("interactionCreate", async (interaction) => {
 client.on('interactionCreate', async (interaction) => {
   if (interaction.customId === "ticket") {
     //ticketというIDのボタンが押されたら実行
-    const ticketid = interaction.user.id;
+    const ticketid = interaction.user.id
     //ticketIDはボタンを押したユーザーIDと同じと定義する
     if (interaction.guild.channels.cache.find(name => name.name === ticketid)) return interaction.reply({
       content: "これ以上作れないよ",
@@ -115,20 +67,17 @@ client.on('interactionCreate', async (interaction) => {
         VIEW_CHANNEL: true
         //チャンネルを見ることを許可する
       });
-      const tic2 = new MessageButton().setCustomId("close").setStyle("SECONDARY").setLabel("🔓 チケット削除");
+      const tic2 = new MessageButton().setCustomId("close").setStyle("PRIMARY").setLabel("閉じる");
       //buttonを作成
-      const closeticketemb = new MessageEmbed()
-        .setColor("#000b3ff")
-        .setTitle("お問い合わせ")
-        .setDescription("```問い合わせ内容を記入してスタッフの対応をお待ちください。\nチケットを削除するには下記ボタンを押してください。```")
-        .setTimestamp()
       channels.send({
-        embeds: [closeticketemb],
+        embeds: [{
+          description: "チケットを閉じますか?"
+        }],
         components: [new MessageActionRow().addComponents(tic2)]
         //buttonを送信
       })
       interaction.reply({
-        content: `チケットは削除されました。`,
+        content: `${channels}を作りました`,
         //メッセージ
         ephemeral: true
         //押した人にしか見れないようにする
@@ -142,4 +91,3 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 client.login(process.env.DISCORD_TOKEN);
-//clientをloginさせる
